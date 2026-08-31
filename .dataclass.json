@@ -1,0 +1,8 @@
+{
+  "_comment": ["Skill Repo Spec v1 s9. TOOL=code/docs (public). FIXTURE=synthetic test data. DATA=real-run output, never git-tracked, lives in a private companion config.", "Enforced by tools/data_boundary.py in .githooks and CI."],
+  "_audited": "2026-08-30 FIRST AUDIT. The real-run output here is a person's Telegram history as jsonl, plus the telethon session file which is full account credentials. The session and api credentials live in the private config directory ($TELEGRAM_HISTORY_EXPORT_CONFIG or ~/.telegram-history-export-config), never in the repo. The exporter refuses to write output inside the repo. Every landing path is declared and sealed.",
+  "data": ["tg_export/", "tg_json/"],
+  "data_sealed": [],
+  "fixture": [],
+  "_data_home": "~/.telegram-history-export-config/   holds the session and telegram_api.json (credentials). Exported jsonl goes to a path outside this repo. Never commit either."
+}

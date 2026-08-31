@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+Thumbs.db
+*.swp
+*.log
+scratch/
+*.local.*
+secrets/
+.env
+*.key
+*.pem
+# NEVER commit real data: telethon sessions (account credentials) or exported history
+*.session
+*.session-journal
+telegram_api.json
+tg_export/
+tg_json/
+*.jsonl
+!.dataclass.json
+!.claude-plugin/plugin.json
