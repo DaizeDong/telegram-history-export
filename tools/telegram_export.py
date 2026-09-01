@@ -147,7 +147,7 @@ async def excluded_peer_ids(client, GetDialogFiltersRequest, types, needle):
     return ids
 
 
-async def run(out_path, limit_per_chat, exclude_folder):
+async def run(out_path, limit_per_chat, exclude_folder, min_mine=0):
     try:
         from telethon import TelegramClient
         from telethon.tl import types
@@ -197,6 +197,7 @@ async def run(out_path, limit_per_chat, exclude_folder):
 
     os.makedirs(os.path.dirname(out_abs) or ".", exist_ok=True)
     n = n_me = n_skip = 0
+    n_quiet = 0
     dialogs = await client.get_dialogs()
     print("exporting %d dialogs" % len(dialogs))
     with open(out_abs, "w", encoding="utf-8") as fout:
@@ -215,6 +216,21 @@ async def run(out_path, limit_per_chat, exclude_folder):
                 ctx = "group"
             else:
                 continue
+            # A conversation you never speak in is worth nothing to a voice profile and can cost
+            # everything to pull: one lurked megagroup here held over a hundred thousand messages, none
+            # of them ours, and it alone would have run for hours. Asking the server how many messages
+            # in this dialog are ours is a single cheap call, limit zero returns no messages and only
+            # the count, so we pay one request to skip an entire history. Zero disables the check and
+            # keeps the old behavior of pulling everything.
+            if min_mine > 0:
+                try:
+                    probe = await client.get_messages(ent, from_user="me", limit=0)
+                    mine_total = getattr(probe, "total", None)
+                except Exception:
+                    mine_total = None       # some peers refuse the search, pull them rather than lose them
+                if mine_total is not None and mine_total < min_mine:
+                    n_quiet += 1
+                    continue
             conv_name, _ = entity_identity(ent)
             conv_title = conv_name or clean_str(getattr(dg, "name", None))
             my_name, my_user = entity_identity(me)
@@ -246,6 +262,8 @@ async def run(out_path, limit_per_chat, exclude_folder):
     except Exception:
         pass
     await client.disconnect()
+    if n_quiet:
+        print("skipped %d dialogs you have fewer than %d messages in" % (n_quiet, min_mine))
     print("\ndone. wrote %d messages (%d yours, %d others), skipped %d excluded dialogs -> %s"
           % (n, n_me, n - n_me, n_skip, out_abs))
     if n_me == 0:
@@ -261,9 +279,12 @@ def main():
     ap.add_argument("--exclude-folder", default="scrape",
                     help='skip dialogs in any folder whose title contains this (case insensitive); '
                          'empty string disables exclusion')
+    ap.add_argument("--min-mine", type=int, default=0,
+                    help="skip any dialog you have fewer than this many messages in. One cheap count "
+                         "request per dialog buys skipping an entire lurked history. 0 disables it.")
     a = ap.parse_args()
     limit = a.limit_per_chat if a.limit_per_chat > 0 else None
-    sys.exit(asyncio.run(run(a.out, limit, a.exclude_folder)))
+    sys.exit(asyncio.run(run(a.out, limit, a.exclude_folder, a.min_mine)))
 
 
 if __name__ == "__main__":
