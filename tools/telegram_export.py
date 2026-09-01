@@ -15,8 +15,14 @@ any folder whose title contains "scrape" is skipped, which drops the read only g
 drown the messages you actually wrote. Change or clear this with --exclude-folder.
 
 Output is one JSON object per message, in the shape:
-  {"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward"}
-The other party's words are kept as context; only their numeric id is stored, never their name.
+  {"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward",
+   "sender_name", "sender_username", "conv_title"}
+The other party's words are kept as context. Alongside the numeric id we store the readable identity
+Telegram already handed us: the sender's display name and @handle, and the conversation's own title. A
+numeric id is unreadable to the person who owns the export, and the names are free at export time and
+expensive later, since recovering them means logging back in and re-querying every peer. The three
+readable fields are best effort and are null whenever Telegram has nothing to give, which happens for
+deleted accounts and for some channels.
 
 Config directory (session and credentials, outside the repo):
   $TELEGRAM_HISTORY_EXPORT_CONFIG, else ~/.telegram-history-export-config
@@ -42,8 +48,70 @@ def load_cred():
     return int(d["api_id"]), d["api_hash"]
 
 
-def shape_record(text, is_me, ctx, ts, sender_id, conv_id, is_forward):
-    """Build one output record. Pure and testable, no telethon types."""
+def clean_str(v):
+    """Normalise a display string to either a non empty stripped string or None.
+
+    Telegram returns absent names in three shapes, missing attribute, None, and empty string, and a
+    record that carried "" would look like a name to every downstream reader while carrying nothing.
+    One normaliser here means the absent cases are all the same value.
+    """
+    if v is None:
+        return None
+    v = str(v).strip()
+    return v or None
+
+
+def display_name(first=None, last=None, title=None):
+    """Assemble the readable name for a peer. Pure, takes plain strings.
+
+    A user has a first and optionally a last name; a group or channel has a title instead. Either
+    side may be entirely absent, for a deleted account or a channel with no title, and then the
+    answer is None rather than an empty string.
+    """
+    t = clean_str(title)
+    if t:
+        return t
+    parts = [p for p in (clean_str(first), clean_str(last)) if p]
+    return " ".join(parts) or None
+
+
+def clean_username(v):
+    """Normalise an @handle to bare text with no leading @, or None when there is none."""
+    v = clean_str(v)
+    if v is None:
+        return None
+    return v.lstrip("@").strip() or None
+
+
+def entity_identity(ent):
+    """Read (display name, username) off a telethon entity by attribute, tolerating None.
+
+    Kept attribute based rather than typed so it can be exercised with a stub in the tests, and so a
+    telethon version that renames a field degrades to None instead of raising mid export. Newer
+    telethon puts extra handles in `usernames`; the first active one is used when `username` is unset.
+    """
+    if ent is None:
+        return None, None
+    name = display_name(getattr(ent, "first_name", None),
+                        getattr(ent, "last_name", None),
+                        getattr(ent, "title", None))
+    user = clean_username(getattr(ent, "username", None))
+    if user is None:
+        for u in (getattr(ent, "usernames", None) or []):
+            user = clean_username(getattr(u, "username", None))
+            if user:
+                break
+    return name, user
+
+
+def shape_record(text, is_me, ctx, ts, sender_id, conv_id, is_forward,
+                 sender_name=None, sender_username=None, conv_title=None):
+    """Build one output record. Pure and testable, no telethon types.
+
+    The first seven arguments and their output fields are the stable contract; downstream consumers
+    read "text", "is_me", "ctx", "ts", "sender", "conv" and "is_forward" exactly as they were. The
+    three readable fields are appended, always present as keys, and null when Telegram gave nothing.
+    """
     return {
         "text": text,
         "is_me": bool(is_me),
@@ -52,6 +120,9 @@ def shape_record(text, is_me, ctx, ts, sender_id, conv_id, is_forward):
         "sender": "tg_%s" % (sender_id if sender_id is not None else "unknown"),
         "conv": "tg_%s" % conv_id,
         "is_forward": bool(is_forward),
+        "sender_name": clean_str(sender_name),
+        "sender_username": clean_username(sender_username),
+        "conv_title": clean_str(conv_title),
     }
 
 
@@ -144,14 +215,26 @@ async def run(out_path, limit_per_chat, exclude_folder):
                 ctx = "group"
             else:
                 continue
+            conv_name, _ = entity_identity(ent)
+            conv_title = conv_name or clean_str(getattr(dg, "name", None))
+            my_name, my_user = entity_identity(me)
             try:
                 async for msg in client.iter_messages(ent, limit=limit_per_chat):
                     if not isinstance(msg, types.Message) or not msg.message:
                         continue
                     is_me = bool(msg.out) or (msg.sender_id == my_id)
+                    # msg.sender is whatever telethon already cached for this message, so reading it
+                    # costs no request. It is None for deleted accounts and for anonymous channel
+                    # posts, and then the readable fields stay null. When the message is ours and
+                    # telethon cached nothing, our own identity from get_me() is the right answer.
+                    s_name, s_user = entity_identity(getattr(msg, "sender", None))
+                    if s_name is None and s_user is None and is_me:
+                        s_name, s_user = my_name, my_user
                     rec = shape_record(msg.message, is_me, ctx,
                                        int(msg.date.timestamp()) if msg.date else None,
-                                       msg.sender_id, dg.id, msg.fwd_from is not None)
+                                       msg.sender_id, dg.id, msg.fwd_from is not None,
+                                       sender_name=s_name, sender_username=s_user,
+                                       conv_title=conv_title)
                     fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     n += 1
                     n_me += 1 if is_me else 0

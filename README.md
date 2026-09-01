@@ -53,11 +53,13 @@ does not.
 ## Output record
 
 ```
-{"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward"}
+{"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward",
+ "sender_name", "sender_username", "conv_title"}
 ```
 
-`sender` is a numeric id, never a name. `conv` identifies the conversation. Records are appended in the
-order the takeout returns them.
+`sender` and `conv` are numeric ids and are what to key on, since a name is not unique and people change theirs. Records are appended in the order the takeout returns them.
+
+`sender_name`, `sender_username` and `conv_title` are the readable identity Telegram had already handed us: a user's first and last name joined, or a group or channel title; the handle with no leading `@`; and the conversation's own name. They exist because numeric ids alone make an export unreadable to the person who owns it, and because they are free now and expensive later: telethon has already resolved the peer, whereas recovering the names afterwards means logging back in and re-querying every peer in the file. All three are best effort and are null, never empty strings, when there is nothing to give, which happens for deleted accounts, for channels with only a title, and for anonymous posts. See `docs/NOTES.md`.
 
 ## Data boundary
 

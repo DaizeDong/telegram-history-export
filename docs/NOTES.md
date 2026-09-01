@@ -38,6 +38,16 @@ the peers of any folder whose title contains the exclusion word, and skips them.
 account this took the owner's own message count from effectively zero visible in the noise to several
 thousand clean. The default exclusion word is scrape; change or clear it with `--exclude-folder`.
 
+## Keep the names, not just the ids
+
+An export keyed only by numeric ids is unreadable to the person who owns it. `tg_123456789` said something to `tg_987654321` in `tg_-1001234` tells you nothing about who was talking or which group it was, and every later question, whose voice is this, which conversation do I want, has to be answered by hand. So each record also carries `sender_name` (a user's first and last name joined, or a group or channel's title), `sender_username` (the handle with no leading `@`), and `conv_title` (the conversation's own readable name).
+
+The reason to capture them at export time is asymmetric cost. Telethon has already resolved the peer entity by the time the message reaches us, so reading the name and handle off it costs no extra request and no extra second. Recovering the same names afterwards costs a fresh login, a live session, and a re-query of every peer in the file, and that is exactly the position a first export left us in.
+
+All three are best effort and are null, never empty strings, when Telegram has nothing to give. Deleted accounts have no name and no handle, some channels have a title and nothing else, and an anonymous channel post has no sender entity at all. A downstream reader can always ask for the key; it may get `None`. The numeric fields `sender` and `conv` are unchanged and remain the thing to key on, since a name is not unique and a person can change theirs.
+
+Names are private data, like the message text they sit next to. They live only in the exported jsonl, which is written outside this repository and is declared DATA in `.dataclass.json`. Nothing readable ever enters the repo; the tests run on synthetic peers.
+
 ## Operational gotchas
 
 The session file is a small SQLite database. If a previous export is still running and holds it open, a
