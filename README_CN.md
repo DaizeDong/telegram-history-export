@@ -37,10 +37,13 @@ Python 加 `telethon`,没别的。登录那步要真实交互终端,导出那步
 ## 输出记录
 
 ```
-{"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward"}
+{"text", "is_me", "ctx": "dm"|"group", "ts", "sender", "conv", "is_forward",
+ "sender_name", "sender_username", "conv_title"}
 ```
 
-`sender` 是数字 id,绝不放名字。`conv` 标识会话。记录按 takeout 返回的顺序追加。
+`sender` 和 `conv` 是数字 id,该拿它们当主键:名字不唯一,人还会改。记录按 takeout 返回的顺序追加。
+
+`sender_name`、`sender_username`、`conv_title` 是 Telegram 早就给了我们的可读身份:用户的姓名拼起来,或者群、频道的标题;去掉开头 `@` 的用户名;以及会话自己的名字。加这三个字段的理由是,光有数字 id,导出的东西自己都看不懂;而且这些名字现在拿是白拿,以后拿就贵了:telethon 在这一步早就把 peer 解析好了,而事后补名字得重新登录、把文件里每个 peer 再查一遍。三个字段都是尽力而为,拿不到就是 null,不会是空字符串。注销的账号、只有标题的频道、匿名发的消息都属于这种情况。详见 `docs/NOTES.md`。
 
 ## 数据边界
 

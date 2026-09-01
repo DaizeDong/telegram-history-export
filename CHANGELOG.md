@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Each record now also carries `sender_name`, `sender_username` and `conv_title`, the readable identity telethon has already resolved at export time. Numeric ids alone make an export unreadable to its owner, and recovering the names later needs a fresh login and a re-query of every peer. All three are null when Telegram has nothing to give. The seven existing fields are unchanged.
+
 ## 0.1.0 (2026-08-30)
 
 Initial release. Export your own Telegram history with context via the official takeout API.
