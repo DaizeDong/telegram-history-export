@@ -147,7 +147,7 @@ async def excluded_peer_ids(client, GetDialogFiltersRequest, types, needle):
     return ids
 
 
-async def run(out_path, limit_per_chat, exclude_folder, min_mine=0):
+async def run(out_path, limit_per_chat, exclude_folder, min_mine=0, groups=False):
     try:
         from telethon import TelegramClient
         from telethon.tl import types
@@ -198,6 +198,7 @@ async def run(out_path, limit_per_chat, exclude_folder, min_mine=0):
     os.makedirs(os.path.dirname(out_abs) or ".", exist_ok=True)
     n = n_me = n_skip = 0
     n_quiet = 0
+    n_group = 0
     dialogs = await client.get_dialogs()
     print("exporting %d dialogs" % len(dialogs))
     with open(out_abs, "w", encoding="utf-8") as fout:
@@ -213,6 +214,9 @@ async def run(out_path, limit_per_chat, exclude_folder, min_mine=0):
             elif isinstance(ent, (types.Chat, types.Channel)):
                 if isinstance(ent, types.Channel) and ent.broadcast:
                     continue                     # a broadcast channel is not a conversation
+                if not groups:
+                    n_group += 1
+                    continue
                 ctx = "group"
             else:
                 continue
@@ -262,6 +266,8 @@ async def run(out_path, limit_per_chat, exclude_folder, min_mine=0):
     except Exception:
         pass
     await client.disconnect()
+    if n_group:
+        print("skipped %d group conversations (pass --groups to include them)" % n_group)
     if n_quiet:
         print("skipped %d dialogs you have fewer than %d messages in" % (n_quiet, min_mine))
     print("\ndone. wrote %d messages (%d yours, %d others), skipped %d excluded dialogs -> %s"
@@ -282,9 +288,14 @@ def main():
     ap.add_argument("--min-mine", type=int, default=0,
                     help="skip any dialog you have fewer than this many messages in. One cheap count "
                          "request per dialog buys skipping an entire lurked history. 0 disables it.")
+    ap.add_argument("--groups", action="store_true",
+                    help="also export group and supergroup conversations. Off by default: measured on a "
+                         "real account, groups were 36186 of 44784 messages but held only 41 of the "
+                         "owner's own 4299, so they cost four fifths of the pull for one percent of the "
+                         "signal. Turn it on when the groups themselves are what you want.")
     a = ap.parse_args()
     limit = a.limit_per_chat if a.limit_per_chat > 0 else None
-    sys.exit(asyncio.run(run(a.out, limit, a.exclude_folder, a.min_mine)))
+    sys.exit(asyncio.run(run(a.out, limit, a.exclude_folder, a.min_mine, a.groups)))
 
 
 if __name__ == "__main__":
