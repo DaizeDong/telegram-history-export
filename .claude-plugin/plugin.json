@@ -1,9 +1,0 @@
-{
-  "name": "telegram-history-export",
-  "version": "0.1.0",
-  "description": "Export your own Telegram message history with context into structured JSON, using Telegram's official takeout API through telethon. Handles a clean interactive login that guarantees a working session (the desktop tdata conversion route produces a broken session whose get_me returns None and mislabels every message), decides authorship by the union of the out flag and the sender id, and can exclude whole lurk-only folders (any folder whose title contains scrape) so read-only groups do not drown the messages you wrote. Chat history is private data and never enters the repo; only synthetic fixtures ship.",
-  "author": { "name": "DaizeDong" },
-  "homepage": "https://github.com/DaizeDong/telegram-history-export",
-  "license": "MIT",
-  "keywords": ["telegram","telethon","takeout","chat-export","chat-history","archive","data-export","skill"]
-}
