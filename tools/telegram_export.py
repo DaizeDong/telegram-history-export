@@ -25,7 +25,7 @@ readable fields are best effort and are null whenever Telegram has nothing to gi
 deleted accounts and for some channels.
 
 Config directory (session and credentials, outside the repo):
-  $TELEGRAM_HISTORY_EXPORT_CONFIG, else ~/.telegram-history-export-config
+  $TELEGRAM_HISTORY_EXPORT_CONFIG, else ../telegram-history-export-config
 Output must be written outside this repository, since it is private data.
 
 Usage: python telegram_export.py --out ~/tg-out/telegram.jsonl
@@ -36,8 +36,8 @@ import json
 import os
 import sys
 
-BASE = os.environ.get("TELEGRAM_HISTORY_EXPORT_CONFIG") or os.path.expanduser(
-    "~/.telegram-history-export-config")
+from storage_paths import config_root, writable_config_root
+BASE = str(config_root())
 CRED = os.path.join(BASE, "telegram_api.json")
 SESSION = os.path.join(BASE, "tg_session")
 
@@ -160,6 +160,8 @@ async def run(out_path, limit_per_chat, exclude_folder, min_mine=0, groups=False
     if not os.path.exists(SESSION + ".session"):
         sys.stderr.write("ERROR: no session at %s. Run: python telegram_login.py\n" % (SESSION + ".session"))
         return 2
+    if os.path.normcase(str(writable_config_root())) != os.path.normcase(BASE):
+        raise RuntimeError("Configuration changed after import; restart with the selected companion")
     api_id, api_hash = load_cred()
     client = TelegramClient(SESSION, api_id, api_hash)
     await client.connect()

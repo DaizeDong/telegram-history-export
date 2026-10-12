@@ -12,10 +12,10 @@ labelled not mine. That key also tends to get deregistered by the server. This s
 get_me() returns None, so a broken session never reaches the exporter.
 
 Run it once. The session file is full account credentials. It lives in the private config directory,
-never in any git repository. After this, telegram_export.py runs unattended.
+versioned only in a PRIVATE companion repository. After this, telegram_export.py runs unattended.
 
 Config directory (session and api credentials live here, outside the repo):
-  $TELEGRAM_HISTORY_EXPORT_CONFIG, else ~/.telegram-history-export-config
+  $TELEGRAM_HISTORY_EXPORT_CONFIG, else ../telegram-history-export-config
 The credentials file telegram_api.json in that directory must contain:
   {"api_id": 123456, "api_hash": "..."}
 Get api_id and api_hash from https://my.telegram.org.
@@ -27,8 +27,8 @@ import json
 import os
 import sys
 
-BASE = os.environ.get("TELEGRAM_HISTORY_EXPORT_CONFIG") or os.path.expanduser(
-    "~/.telegram-history-export-config")
+from storage_paths import config_root, writable_config_root
+BASE = str(config_root())
 CRED = os.path.join(BASE, "telegram_api.json")
 SESSION = os.path.join(BASE, "tg_session")     # telethon appends the .session suffix
 
@@ -69,6 +69,8 @@ async def main():
         sys.stderr.write("ERROR: needs telethon. pip install telethon\n")
         return 2
 
+    if os.path.normcase(str(writable_config_root())) != os.path.normcase(BASE):
+        raise RuntimeError("Configuration changed after import; restart with the selected companion")
     api_id, api_hash = load_cred()
     os.makedirs(BASE, exist_ok=True)
     path = SESSION + ".session"

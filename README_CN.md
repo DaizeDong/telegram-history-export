@@ -2,7 +2,7 @@
 
 用 Telegram 官方的 takeout 接口,把你自己的 Telegram 聊天记录连同上下文导出成结构化 JSON。和 discord、qq 的历史工具是姊妹项目,结构一致,以后再导出就是两条命令,不用从零调研。
 
-聊天记录是私有数据,绝不进这个仓库。telethon 的 session 就是完整账号凭据,放在私有配置目录里,绝不入 git。仓里只有合成 fixture,数据边界闸门强制这一点。
+聊天记录是私有数据,绝不进这个仓库。telethon 的 session 就是完整账号凭据,放在独立私有配置仓里，随配置仓保存版本。仓里只有合成 fixture,数据边界闸门强制这一点。
 
 ## 两步
 
@@ -28,7 +28,7 @@ Telegram 的 takeout 接口就是桌面端那个导出按钮背后的东西,ToS 
 
 ## 配置目录
 
-设 `$TELEGRAM_HISTORY_EXPORT_CONFIG`,否则用默认的 `~/.telegram-history-export-config`。里面放 `telegram_api.json`(api 凭据)和登录后生成的 `tg_session`。两者都是私有的,绝不能提交。
+设 `$TELEGRAM_HISTORY_EXPORT_CONFIG`,否则用默认的同级 `../telegram-history-export-config`。里面放 `telegram_api.json`(api 凭据)和登录后生成的 `tg_session`。两者都只在私有配置仓提交。
 
 ## 依赖
 
@@ -47,4 +47,4 @@ Python 加 `telethon`,没别的。登录那步要真实交互终端,导出那步
 
 ## 数据边界
 
-session、凭据、导出的 jsonl 全是真实运行产物,在 `.dataclass.json` 里声明、绝不提交。测试跑在合成记录上,不需要任何真实账号就能验证代码。
+session、凭据、导出的 jsonl 全是真实运行产物,在 `.dataclass.json` 里声明，只在私有配置仓保存版本。测试跑在合成记录上,不需要任何真实账号就能验证代码。

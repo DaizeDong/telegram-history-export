@@ -5,7 +5,7 @@ takeout API. Sibling to the discord and qq history tools, same shape, so a futur
 commands rather than a fresh investigation.
 
 Chat history is private data. It never enters this repository. The telethon session is full account
-credentials and lives in a private config directory, never in git. Only synthetic fixtures ship, and a
+credentials and lives in a versioned PRIVATE companion repository. Only synthetic fixtures ship, and a
 data boundary gate enforces it.
 
 ## Two steps
@@ -41,9 +41,9 @@ decided by the union of the out flag and sender id equals your id, not by the ou
 
 ## Config directory
 
-Set `$TELEGRAM_HISTORY_EXPORT_CONFIG`, or the default `~/.telegram-history-export-config` is used. It
+Set `$TELEGRAM_HISTORY_EXPORT_CONFIG`, or the default sibling `../telegram-history-export-config` is used. It
 holds `telegram_api.json` with your api credentials and the `tg_session` file after login. Both are
-private and must never be committed.
+private and must only be committed to the PRIVATE companion.
 
 ## Requirements
 
@@ -64,5 +64,5 @@ does not.
 ## Data boundary
 
 The session, the credentials, and the exported jsonl are all real run output. They are declared in
-`.dataclass.json` and never committed. Tests run against synthetic records, so no real account is needed
+`.dataclass.json` and versioned only in the PRIVATE companion. Tests run against synthetic records, so no real account is needed
 to exercise the code.
