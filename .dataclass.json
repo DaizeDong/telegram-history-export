@@ -2,7 +2,7 @@
   "_comment": [
     "TOOL is source code and schema. Real run DATA belongs in the versioned PRIVATE companion. Public source physically contains no real DATA."
   ],
-  "_audited": "2026-08-30 FIRST AUDIT. The real-run output here is a person's Telegram history as jsonl, plus the telethon session file which is full account credentials. The session and api credentials live in the private companion ($TELEGRAM_HISTORY_EXPORT_CONFIG, else the sibling telegram-history-export-config), never in the repo. The exporter refuses to write output inside the repo. Every landing path is declared and sealed. Selection lives in tools/storage_paths.py (pinned guards datadir; no home-directory default). Credentials, sessions and real recovered outputs are versioned in the PRIVATE sibling companion; public source contains no real DATA.",
+  "_audited": "2026-08-30 FIRST AUDIT. The real-run output here is a person's Telegram history as jsonl, plus the telethon session file which is full account credentials. The session and api credentials live in the private companion ($TELEGRAM_HISTORY_EXPORT_CONFIG, else the sibling telegram-history-export-config), never in the repo. The exporter refuses to write output inside the repo. Every landing path is declared and sealed. Selection lives in tools/storage_paths.py (fleet_guards companion resolver; no home-directory default). Credentials, sessions and real recovered outputs are versioned in the PRIVATE sibling companion; public source contains no real DATA.",
   "data": [
     "tg_export/",
     "tg_json/"
