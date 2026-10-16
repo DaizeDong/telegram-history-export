@@ -1,8 +1,8 @@
 # telegram-history-export storage
 
 Source code stays in this repository. The default sibling PRIVATE companion is
-`../telegram-history-export-config`. Explicit `TELEGRAM_HISTORY_EXPORT_CONFIG` or its `_DIR`
-variant selects another root. Real records, credentials and recovery history belong
+`../telegram-history-export-config`. An explicit `TELEGRAM_HISTORY_EXPORT_CONFIG`
+selects another root; with neither, the tools stop with initialization guidance. Real records, credentials and recovery history belong
 in a versioned PRIVATE companion, never a public or unknown-visibility source tree.
 
 The companion preserves the existing file names and schemas, with `data/` reserved
