@@ -27,7 +27,7 @@ import json
 import os
 import sys
 
-from storage_paths import config_root, writable_config_root
+from storage_paths import config_root
 BASE = str(config_root())
 CRED = os.path.join(BASE, "telegram_api.json")
 SESSION = os.path.join(BASE, "tg_session")     # telethon appends the .session suffix
@@ -69,8 +69,6 @@ async def main():
         sys.stderr.write("ERROR: needs telethon. pip install telethon\n")
         return 2
 
-    if os.path.normcase(str(writable_config_root())) != os.path.normcase(BASE):
-        raise RuntimeError("Configuration changed after import; restart with the selected companion")
     api_id, api_hash = load_cred()
     os.makedirs(BASE, exist_ok=True)
     path = SESSION + ".session"

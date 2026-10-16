@@ -14,8 +14,4 @@ Keep keys, sessions, restored message evidence and the source schema together in
 private version history. Rebuildable caches and failed temporary outputs may be
 reviewed separately. `storage.contract.json` lists this preservation scope.
 
-Path selection uses the companion resolver of the installed fleet_guards package
-(`pip install -e "$(git config --get fleet.guards)"`). Credential writers require a current
-PRIVATE companion proof before creating directories, sessions or key files. Missing companions
-can be inspected by readers but writes require restoring the private Git checkout. Explicit
-overrides must be absolute; canonical source aliases are rejected.
+Path selection uses the companion resolver of the installed fleet_guards package (`pip install -e "$(git config --get fleet.guards)"`). Credential writers use the same `config_root()` as readers: when no companion resolves it raises with restore guidance, and nothing falls back into this repository. No privacy proof runs at write time; the commit and push hooks keep DATA out of the public repository. Explicit overrides must be absolute; canonical source aliases are rejected.

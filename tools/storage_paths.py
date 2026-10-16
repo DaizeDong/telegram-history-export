@@ -19,9 +19,3 @@ def config_root():
         raise RuntimeError("Private companion missing; clone %s-config beside this repo or set %s_CONFIG"
                            % (TOOL, TOOL.upper().replace("-", "_")))
     return Path(root).resolve()
-
-def writable_config_root():
-    root = config_root()
-    if not root.is_dir():
-        raise RuntimeError("Private companion missing; restore its Git checkout before writing")
-    return root
